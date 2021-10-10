@@ -1,0 +1,44 @@
+Recommended Courses:
+=====================
+1. Certified Kubernetes Administrator (CKA) with Practice Tests by Mumshad Mannambeth
+2. https://www.pluralsight.com/courses/maintaining-monitoring-troubleshooting-kubernetes
+
+Links for Reference:
+====================
+https://scriptcrunch.com/kubernetes-exam-guide/
+https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad
+https://www.youtube.com/watch?v=9UqkWcdy140
+https://www.youtube.com/watch?v=uSbqo4X9Zoo&list=PL6nVblW4NNAQrgSjhT8iK_v7ROIV2ikVu
+
+Exam Simulator:
+===============
+https://killer.sh/cka -> You get two free sessions if you enroll for CKA exam, this exam is more tough than actual exam but definitely it will give you great experience 
+
+Few Tips:
+========
+- We should use "Ctrl+Insert" for Copy and "Shift+Insert" for Paste within the terminal
+- Use kubectl aliases to save the time
+- Use imperative commands to generate YAML files
+- Save the YAML files with question numbers like 1.yaml, 1a,yaml...etc
+- Always copy and paste the pod names/any names from question itslef instead of typing it manually, to avoid typos
+- Always check the cluster name you are on
+- Always check the node name
+- Check the namespace as per question
+- Go through the small questions first
+- Flag the lengthy or problems ones and do at the last
+- Verify the rosources are created in right context
+- Verify that resources are running
+
+Topics that are covered in my exam:
+==================================
+- Etcd backup and restore
+- Create Multicontiner pods and create sidecar container to capture logs and mount the volume.
+- Question related to version upgrade using kubeadm
+- Identify and fix the broken worker node (check kubelet service in worker node)
+- Create pv,pvc and mount pvc to pod and increase pvc to new memory and record it
+- Question related to ingress
+- Question related to RBAC (create Service account,role,rolebinging and SA can create only Deployment/service/Deamonset from particular namespace
+- Questions related to creating network policy
+- Schedule pod in specific node using nodeselector.
+- List the pods which consume more CPU
+

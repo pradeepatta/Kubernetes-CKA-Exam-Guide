@@ -1,0 +1,15 @@
+### I used below aliases during CKA exam to save the time ###
+# vi /root/.bashrc
+alias k='kubectl'
+alias kd='k describe'
+alias kg='k get'
+alias kdp='kd pods'
+alias kdd='kd deployments'
+alias kgn='kg nodes'
+alias kgp='kg pods'
+alias kgd='kg deployments'
+alias kga='kg all'
+alias kgs='kg svc'
+alias kaf='k apply -f'
+alias krdo='k run --dry-run=client -o yaml'
+alias kcdo='k create --dry-run=client -o yaml'
