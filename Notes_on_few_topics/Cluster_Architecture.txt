@@ -1,0 +1,13 @@
+In HA cluster:
+API Servers - Active/Active (You can use load balnacer too)
+Controller Manager - Active/Standby (Election process for master)
+Scheduler  - Active/Standby (Election process for master)
+ETCD - Distributed database - All are active, API server can read/write to any etcd node
+
+ETCD with HA:
+- Reads will happen from any of the node in the etcd cluster
+- Writes will happen to master and master will replicate the data to other nodes
+- It uses "RAFT" protocal to elect the master
+- Always recommened t have minimum 3 nodes in etcd cluster
+
+kubeadm init --pod-network-cidr 10.244.0.0./16 --apiserver-advertise-address=192.168.56.2

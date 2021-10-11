@@ -1,0 +1,59 @@
+Section 3: Scheduling
+
+Manual Scheduling:
+Without scheduler - Scheduling pods directly on specific nodes using "nodeName" and "kind: Binding" options
+
+Labels , Selectors and Annotations:
+Labels are just like aliases for k8s objects
+Selectors are to select the objects based on the labels
+Annotations are nothng but comments
+
+Taints & Tolerations:
+Taints for Nodes and Tolerations are for PODS
+Taints will let Scheduler know what pods can be placed on a particular Node
+Taint options - NoSchedule, PreferNoSchedule, NoExecute
+All master nodes by default tainted with "NoExecute" value
+Tolerations are defined in POD template file and pods will be placed on nodes based on the taint values defined in tolerates sections
+
+NoSchedule - this means that no pod will be able to schedule onto node unless it has a matching toleration. 
+PreferNoSchedule - this is a “preference” or “soft” version of NoSchedule – the system will try to avoid placing a pod that does not tolerate the taint on the node, but it is not required. 
+NoExecute - the pod will be evicted from the node (if it is already running on the node) and will not be scheduled onto the node (if it is not yet running on the node).
+
+Removing the taints does not trigger the re-deployment of the existing pods. We need to force it instead:
+kubectl rollout restart deploy/ghost
+
+Node Selector:
+To select the target node for pods based on labels
+Doesn;t support expressions in nodeSelector section
+
+Node Affinity:
+To select the target node for pods based on labels and expressions (Exists, In, NotIn..etc)
+Options available for both new pods and already running nodes
+
+Always use Taints, Tolerations and Node Affinity together to place the PODs in specific nodes
+
+Recource Limits:
+Default values for a pod - 1 vCPU, 512 Mi
+POD will be terminted if the resource consumption is more that the limit
+you can set the default LimitRanges for each name space
+
+Deamon sets:
+Runs one copy of POD on each worker nodes in a cluster
+it uses node affinity rules and default scheduler to deploy the PODs on each node
+Mainly used for Montoring and Logging agents on nodes
+kube-proxy, CNI Node agents, ingress controller nodes..etc are examples of daemon sets
+
+Static Pod:
+Independant of kubernetes cluster and managed by kubelet
+default path will be /etc/kubernetes/manifests
+need to use "docker ps" to check the pod status or run kubectl get pods from master server (pod name will be podname-nodename)
+API server, Scheduler, Controller manager and etcd are examples of static pods
+
+Multiple Schedulers:
+You can have multple scehdulers in k8s cluster
+you can define the name of the scheduler with the option "--scheduler-name" in service file after downloading and setting up scheduler service
+Mention "schedulerName" in Pod definition file to use particlar schedular
+
+
+
+

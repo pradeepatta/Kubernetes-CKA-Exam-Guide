@@ -1,0 +1,6 @@
+Monitoring Clsuter component Metrics:
+kubernetes-metric-server to collect the metrics from nodes via cAdvisor (sub component of kubelet)
+Can view top nodes and pods after deployment
+event-simulator can be used for application logs
+Promtail, loki, prometheus and Grafana are few other examples
+you can use "kubectl logs" and "docker logs" to see the logs

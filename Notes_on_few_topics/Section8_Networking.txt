@@ -1,0 +1,83 @@
+CNI - Container Network Interface
+- Defines the standard for network setup for k8s cluster
+- Ex: calico, flannel, Weavenet, Cilium, VMWare NSX..etc are few examples
+
+type "ip route" to check routing on k8s nodes
+
+Tasks of CNI plugin:
+- Create network namespace on hosts
+- Identify the network the conatiners must attach to
+- Container runtime to invoke Network plugin(Bridge) when conatiners are added/deleted
+- JSON format of the network plugin
+- Manage IP address management
+
+/opt/cni/bin/calico -> For setting up network for pods
+/etc/cni/net.d
+/opt/cni/bin/calico-ipam -> For IP address mgmt on nodes
+
+
+curl -fsSLo weave-daemonset.yaml "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+
+kube-proxy:
+- Responsible for creating firewall/routing rules for PODs and services across cluster
+- We can configure to use different ways to manage the rules
+- userspace, ipvs and iptables are few examples
+- iptables is default mode for kube-proxy
+
+To enable the kube-proxy ipvs mode, you must set the kube_proxy_extra_args parameter in the cluster configuration file.
+
+Changing mode:
+kube_proxy_extra_args: ["--feature-gates=SupportIPVSProxyMode=true","--proxy-mode=ipvs"]
+
+#kubectl logs kube-proxy-jpwz6 -n kube-system | grep -i proxy
+#docker ps |grep proxy
+#docker logs 6e8b9b058bfc -f
+#ipvsadm -Ln
+#iptables -L -t nat
+
+
+# cat /etc/kubernetes/manifests/kube-controller-manager.yaml | grep -i cluster
+    - --cluster-cidr=10.244.0.0/16    
+    - --service-cluster-ip-range=10.96.0.0/12
+    - --cluster-name=kubernetes-dev
+#kubectl logs -c weave weave-net-dbp9x -n kube-system  - For POD IP range
+
+Cluster CIDR (cluster_cidr) - The CIDR pool used to assign IP addresses to pods in the cluster. By default, each node in the cluster is assigned a /24 network from this pool for pod IP assignments. The default value for this option is 10.42.0.0/16.
+
+Service Cluster IP Range (service_cluster_ip_range) - This is the virtual IP address that will be assigned to services created on Kubernetes. By default, the service cluster IP range is 10.43.0.0/16. If you change this value, then it must also be set with the same value on the Kubernetes API server (kube-api).
+
+
+Cluster DNS:
+===========
+- namespace, services, pods...etc will have their DNS names and subdomains
+- CoreDNS is the deafult DNS server in k8s cluster
+
+#kg svc -A | grep -i dns
+#cat /var/lib/kubelet/config.yaml| grep -i clusterDNS
+
+curl http://webservice -> refers to "webservice" service in default name space
+curl http://webservice.apps -> refers to "webservice" service in "apps" name space
+curl http://webservice.apps.svc.cluster.local -> To access the service at cluster level
+
+Ingress:
+======
+- Layer 7 load balancer for managing multple services under single name
+- k8s doesn't come with any default Ingress controller, we have to deploy one
+- Istio, GCE (Google Load Balancer), Nginx, HAProxy, Traefik, Contour, Linkerd, Kong...etc are few examples
+- GCE and Nginx are currently being managed by Kubernetes community
+- You may deploy any number of ingress controllers within a cluster
+- You can use "kiali" as web interface to see the live traffic
+
+Ingress controller:
+- Need to deploy as deployment to install Ingress controller
+- Deployment, service, config map and service account need to be deployed for Ingress controller setup
+
+Ingress Recources:
+- Set of rules and configuration applied to ingress controller
+- you can specify the rules to forward the traffic to services
+- create one rule for one domain and multiple paths for each sub-page under that domain
+
+
+
+
+

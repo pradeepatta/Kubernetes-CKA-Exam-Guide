@@ -1,0 +1,60 @@
+Cluster Maintenance:
+
+pod-eviction-timeout: 
+- waiting time for controll manager to terminate/evactuate the PODs from the node if node is not healthy
+- default timeout is 5miuntes but you can change it
+- Pods that are part of replicateset will be restarted on other node
+- Pods that are not part of the replicaset will be terminates
+
+Nodes Maintenance:
+taint - key-value pair to tolerate/restrict the PODs to be scheduled on a node(Ex: node-role.kubernetes.io/master:NoSchedule)
+cordon -  To stop scheduling additional pods on a node without removing the current pods running on that one
+drain - Remove the existing nodes and put the node in maintenance mode, PODs that are part of replicate set/Stateful set will be restarted on other node. Deletes Pods permanantely that are not managed by ReplicationController, ReplicaSet, Job, DaemonSet or StatefulSet
+uncordon - To enable scheduling on the node for new pods. To re-distribute the existing pods in the cluster, you need to restart the deployment so that few of the PODs will be restart on this node
+
+Cluster Upgrade:
+
+Master upgrade:
+- API server, kubectl and all cluster manager components will not be availble during the master upgrade
+- No impact to the worker nodes and running PODs
+- kubeadm needs to updated first in order to upgrade the cluster
+- kubelet needs to be updated manually
+- You can upgrade to one minor version at a time, that means you can upgrade from v1.18 to 1.19 first and then 1.20. you cannot directly upgrade the cluster from v1.18 to 1.20
+
+Steps:
+- run kubeadm upgrade plan to see the current and available versions for upgrade
+- upgrade the kubeadm version to +1 version (v1.18 to v.19)
+- upgrade the cluster using kubeadm  (kubeadm upgrade apply v1.19)
+- Upgrade CNI if you want to
+- Upgrade kubeadm and cluster on other master nodes if you have any
+- Drain the node
+- upgrade the kubelet & kubectl versions and restart the kubelet service
+- run the "kubectl get node" to command to see that kubelet version of master node is upgraded
+- Check the verion by running kubectl get nodes command
+- Uncordon the node
+
+steps for Worker node:
+- upgrade the kubeadm version to +1 version
+- Drian the node
+- upgrade the cluster node using kubeadm
+- upgrade the kubelet version
+- restart the kubelet
+- run "kubectl get node" command
+- uncordon the node
+
+Backup & Restore:
+
+Backup:
+- Best approach is to define the resource in delcarative way and save those YAML files in source code management like github, s3..etc
+- Frequent backup of all resource information from master
+      kubectl get all -A -o yaml > all-deploy-services.yaml
+- (Or) use tools like Velero to take the cluster level backup
+- Take backup of "--data-dir" path mentioned in etcd config file using backup tools
+- you can use "etcdctl" command to take the snapshots of etcd database and restore it
+
+
+
+
+
+
+

@@ -1,0 +1,139 @@
+At node level:
+password based authetication disabled
+SSH key based auth enabled
+
+Access to API servers:
+Local file - username and passwords
+username and tokens
+Certificates
+External auth platform - AD, LDAP..etc
+service accounts
+
+Authorzation:
+AlwaysAllow
+AlwaysDeny
+NODEAuthorizer
+RBAC - Role based authetication
+ABAC - Attribute based authemtication
+External WEBHOOK - Ex: OPA (Open Policy Agent)
+
+You define the Authorization mode in KUBE-API config file using "--'authorization-mode" option, you can specifiy multiple modes and it checks one by one in order
+    Ex: --authorization-mode=Node,RBAC
+
+All communication between kubernetes master compononets happened using TLS certificates
+
+By default all pods can access other pods within the k8s cluster
+Network policies - To restrict the connectivty between pods/applications
+
+List of users who access the kubernetes cluster:
+- Admins
+- Developers
+- Bots (service accounts)
+- End Users -> This is managed within the application so it is out of scope here
+
+We can only create serviceaccounts in k8s natively
+We should use thrid party providers for providing access to regular users
+
+kube-api server autheticates the users to allow the access to cluster
+You can configure API server to autheticate the users in below ways 
+ - Static password file (CSV file - password, username, UID, group) - use "--basic-auth-file" in API server config file to use it
+ - Static Token file (CSV file - token, username, UID, group) - use "--token-auth-file" in API server config file to use it
+ - Certificates
+ - Identity Services (LDAP, AD..etc)
+
+curl -v -k https://k8s.cluster.abc.com:6443/api/v1/pods -u "user1:passwd"
+curl -v -k https://k8s.cluster.abc.com:6443/api/v1/pods --header "Authorization: Bearer tokennumber"
+
+
+TLS Certificates:
+/etc/kubernetes/manifestes -> Where control plane YAML files reside
+/etc/kubernetes/pki/ -> Path where all the certificates resides
+
+/etc/kubernetes/manifests/kube-apiserver.yaml -> serach for "pki" or crt to see the list of certs/keys to be used
+
+openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout -> to see the details of a certificate 
+
+We can use Certificates API service to sign the certificates, provide the new certificates and renew the certificates in k8s cluster. Controller manager takes care of managing certificate management
+
+
+KUBECONFIG:
+============
+Without kubeconfig file:
+
+curl https://my-kube-plaground:6443/api/v1/pods --key admin.key  --cert admin.crt --cacert ca.crt
+
+kubectl get pods  --server my-kube-plaground:6443 --client-key admin.key --clientcertificate admin.crt --certificate-authority ca.crt
+
+$HOME/.kube/config - Kind "config"
+
+Sections in kube config file:
+Clusters - List of clusters having access to
+Contexts - Mapping between cluster and users 
+Users - Users that are having access to cluster
+
+you can also mention the namespaces in contect section to switch to particular namespace in a cluster
+
+current-context - default context used by kubectl 
+
+kubectl config view
+kubectl config view --kubeconfig=/root/test_k8s.conf
+
+RBAC:
+role - Defines the list of permissions/actions allowed on pariticular/multiple resources
+rolebinding - Role bind maps the users/groups to the role to grant access to users on particular resources
+
+clutser role - Defining the roles at cluster level like cluster admin role, storage admin role...etc
+Cluster role Binding - Maps users to cluster role bindings to provide access at cluster level
+
+Service Accounts:
+- These accounts are mainly used for automation
+- Monitoring and other application deployments creates few service accounts to interact with other services in the cluster
+- A token gets generated when you create a new service account and it gets stored in a secret, these secrets wil be mounted as secret volume mounts on respective PODs.
+
+/var/run/secrets/ -> path inside pod where secrets are stored
+
+Public Docker Repos:
+docker.io
+gcr.io
+
+private Repos:
+Elastic Container Registry (ECR)
+Azure Container Registry (ACR)
+VMWare Harbour
+
+docker login privateregistry.com
+docker run privateregistry.com/apps/internal-app
+image: docker run privateregistry.com/apps/internal-app - in POD YAML file
+imagePullsecrets: regcred -> name of the secret created for Private registry login
+
+kubcetl create secret docker-registry -> use to create secret for private docker registries
+
+
+Security Context:
+- Security settings for POD/Container
+- You can configure security context at POD level or container level or both levels
+- Container level settings will override POD level settings
+- Ex: runAsUser: 1000
+
+Network Security/policy:
+- To restrict the network traffic between the pods
+- By default all PODs in the k8s cluster communicate each other
+- Default Network policy is "Allow All"
+- Use "labels" and "selectors" to aply the network policies to PODs
+- policyTypes: Ingress under specs in Kind:NetwokrPolicy for incomeing traffic
+
+- CNI Flannel doesn't support Network Policies
+
+ingress -> Incoming traffic
+egress -> outgoing traffic
+
+
+
+
+
+
+
+
+
+
+

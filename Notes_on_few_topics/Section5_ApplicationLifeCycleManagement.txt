@@ -1,0 +1,37 @@
+Rollout and Versioning:
+
+Deployment strategy:
+Recreate - Destory the exitsing setup and deploy the newer version - Application will be completly down with this method - Not recommended
+Rolling Update - Default strategy - One by one will be replaced with this strategy so that application will be available all the time. In the backend, new replicaset will be created in parallel with existing one and new pods will be replaced one by one
+
+Monitor "watch kubectl get replicasets" output to understand the rollout and rollout undo process
+
+kubectl apply -f xxx.yml -> Rolling update happens when you edit the deployment YAML file
+
+Environment variable Value Types:
+Plain Key Value - Declaring values of name and value parameters in the YAML file directly
+ConfigMap - Configuration data - Defining "valueFrom -> ConfigMapKeyRef" under "env:" section
+Secrets - usernames and passwords - Defining "valueFrom -> secretKeyRef" under "env:" section
+
+Multi container pods: side car, adapter and ambassador patterns
+log agent, monitoring agent, proxies..etc are best examples for setting up multi conatiner pods. 
+They share the network, storage..etc recources with main pod
+
+Init Container:
+- Used to perform basic setup/checks before creating main container
+- Runs only once
+- Will be defined under "Init Containers" section under "spec" of a pod
+- Examples:  clone the git repo, copy the binaries required by main application, check the status upstream services...etc
+
+Probes; Help to check the health of the pods
+Startup Probe: Will be used if process requires time to get ready, reading a file, parsing a large configuration, preparing some data, and so on
+readiness probe: To confirm POD is UP and reachable, it doesn;t mean that application is up. Something like ping to see POD is reachable 
+liveness probe: ensures that the application is healthy and capable of processing requests.
+
+
+
+
+
+
+
+
