@@ -1,0 +1,449 @@
+https://stackoverflow.com/questions/35757620/how-to-gracefully-remove-a-node-from-kubernetes
+https://success.mirantis.com/article/how-to-pause-or-drain-a-node-on-kubernetes
+
+https://kubernetes.io/docs/reference/kubectl/cheatsheet/
+https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#options
+
+journalctl -u etcd.service -l
+
+kubectl exec nginx -it -- ls -ltr /usr
+kubectl exec -c weave weave-net-dbp9x -n kube-system -it -- ls -ltr /var/log
+
+# # k run test-nslookup --image=tutum/dnsutils --restart=Never --command -- sleep 60
+# k exec -it test-nslookup -- bash
+
+#k create deployment test-nslookup --image=tutum/dnsutils --replicas=2 --dry-run=client -o yaml > test-nslookup-deploy.yml
+
+Important Paths:
+==============
+/etc/kubernetes/
+/etc/kubernetes/pki
+/etc/kubernetes/manifests
+/etc/cni/net.d  -> CNI Config
+/opt/cni/bin -> CNI Binaries
+/var/lib/kubelet
+/var/lib/docker
+
+/etc/kubernetes/kubelet.conf
+/var/lib/kubelet/config.yaml
+
+/opt/cni/bin/calico -> For setting up network for pods
+/opt/cni/bin/calico-ipam -> For IP address mgmt on nodes
+/var/log/calico/cni/cni.log -> Log file
+
+/usr/local/bin/kube-proxy -> Binary file for Kube Proxy
+
+kubectl config view
+kubectl config view --kubeconfig=/root/test_k8s.conf
+kubectl config use-context prod-user@production-cluster
+
+export KUBECONFIG=/root/test_k8s.conf
+
+SSL Certs:
+========
+# kubeadm certs check-expiration | grep apiserver
+# kubeadm certs renew apiserver
+
+# cat /etc/kubernetes/manifests/kube-controller-manager.yaml | grep -i cluster
+    - --cluster-cidr=10.244.0.0/16      -> Cluster CIDR (or) POD CIDR
+    - --service-cluster-ip-range=10.96.0.0/12 -> Services CIDR
+    - --cluster-name=kubernetes-dev
+
+#kubectl logs -c weave weave-net-dbp9x -n kube-system  - For POD IP range
+
+Cluster CIDR (cluster_cidr) - The CIDR pool used to assign IP addresses to pods in the cluster. By default, each node in the cluster is assigned a /24 network from this pool for pod IP assignments. The default value for this option is 10.42.0.0/16.
+Service Cluster IP Range (service_cluster_ip_range) - This is the virtual IP address that will be assigned to services created on Kubernetes. By default, the service cluster IP range is 10.43.0.0/16. If you change this value, then it must also be set with the same value on the Kubernetes API server (kube-api).
+
+#kubectl logs kube-proxy-jpwz6 -n kube-system | grep -i proxy
+#docker ps |grep proxy
+#docker logs 6e8b9b058bfc -f
+#ipvsadm -Ln
+#iptables -L -t nat
+
+#kg svc -A | grep -i dns
+#cat /var/lib/kubelet/config.yaml| grep -i clusterDNS
+
+kubectl api-resource -> To list all AP resources
+kubectl api-resources --namespaced=true -> Only namespace level scoped
+kubectl api-resources --namespaced=false -> Cluster level scoped
+
+kubectl auth can-i --list --namespace=foo -> list of actions allowed in a namespace
+kubectl auth can-i --list --as dev-user --namespace=foo -> list of actions allowed in a namespace
+kubectl auth can-i create deployements -> tells if you have access to perform this action or not...yes/no is the output
+kubectl auth can-i create deployements --as dev-user
+kubectl auth can-i create deployements --as dev-user --namespace test
+
+kubectl get componentstatus
+kubectl get cs scheduler
+kubectl get componentstatus --kubeconfig admin.kubeconfig
+
+kubectl cluster-info
+
+kubeadm token list
+
+kubectl exec etcd-master -n kube-system etcdctl get / --prefix -keys-only
+
+kubectl exec etcd-master -n kube-system -- sh -c "ETCDCTL_API=3 etcdctl get / --prefix --keys-only --limit=10 --cacert /etc/kubernetes/pki/etcd/ca.crt --cert /etc/kubernetes/pki/etcd/server.crt  --key /etc/kubernetes/pki/etcd/server.key" 
+
+kubectl get nodes -o wide
+kubectl cluster-info dump > /tmp/k8s_dev_devops_dump
+kubectl get all -A
+kubectl get all --all-namespaces
+kubectl get all -n kube-system
+kubectl get all -A -o yaml > all-deploy-services.yaml
+
+kubectl get events -A -> Events from all namespaces
+kubectl get events -> to see the events in current name space
+kubectl get events -n <namespace> -> for specific name space events
+
+kubectl logs kube-scheduler-master-01 -n kube-system -> to check the logs of a POD
+
+kubectl logs webapp-1 -f
+kubctl logs <podname> -f
+kubctl logs <podname> -f --previous
+k logs admin-pod --since=1h
+kubectl logs deployment/nginx -c nginx-1
+
+kubectl exec envar-demo -- printenv  -> To Print all environment variables
+
+kubectl run nginx --image nginx --dry-run=client -o yaml  > nginx.yml -> to generate YAML file for POD creation, this doesn't create POD
+
+kubectl create deployment --image=nginx nginx replicas 3 --dry-run=client -o yaml > nginx-deployment.yaml
+
+kubectl get pod webapp -o yaml > my-new-pod.yaml
+
+kubectl get pods -A
+kubectl get pods --all-namespaces
+kubectl get pods -o wide
+kubectl get pods -v=8 -o=yaml
+kubectl explain pods
+kubectl explain pods.spec
+kubectl explain pods.metadata
+kubectl get pods --selector app=app1
+kubectl get pods --selector app=mysql --all-namespaces
+kubectl get all -A --selector env=prod,bu=finance,tier=frontend
+
+kubectl label nodes node01 size=large
+kubectl get --show-labels node node01
+kubectl get nodes --show-labels
+kubectl get po -l app=nginx
+
+kubectl run pod test2 nodeName=node1 -> to run the node on specific node..you can use "kind: Binding" if you want to bind the already running pod to a node
+
+kubectl taint node node01 app=blue:NoSchedule -> Only pods with labels "app=blue" will be scheduled on node01
+kubectl taint node controlplane node-role.kubernetes.io/master:NoSchedule- -> To untaint the master node
+
+kubectl cordon <nodename> -> Disable the scheduling..exitsing pods remains running on the same node
+kubectl drain <nodename> --ignore-daemonsets -> Maintenance mode. To remove the existing pods running on a specific node and have them rescheduled on other nodes in the cluster if they are part of replica set
+kubectl uncordon <nodename> -> To enable scheduling on the node for new pods. To re-distribute the existing pods in the cluster, you need to restart the deployment so that few of the PODs will be restart on this node
+
+systemctl stop kubelet
+systemctl stop docker
+
+-- do the activity
+
+systemctl start docker
+systemctl start kubelet
+
+docker ps 
+docker ps -a
+
+kubectl uncordon <nodename>
+kubectl get nodes -o wide
+
+kubectl -n ns-2 exec pod2-656d7df678-pn58q -- curl 172.17.0.4 | grep Welcome
+
+kubectl apply -f deployment/frontend
+kubectl rollout status deployment/myapp-deployment
+kubectl rollout history deployment/frontend
+kubectl rollout undo deployment/frontend
+kubectl rollout restart deployment/frontend -> to restart all the PODs in a deployment
+
+kubectl autoscale deployment foo --min=2 --max=10
+
+kubectl create configmap <configmap-name> --from-literal=<key>=<value>
+kubectl create configmap app-config --from-literal=APP_COLOR=blue
+kubectl create configmap app-config --from-file=app_config.properties
+kubectl get configmap
+
+kubectl create secret generic <secret-name> --from-literal=<key>=<value>
+kubectl create secret generic db-secret --from-literal=DB_Host=sql01 --from-literal=DB_User=root --from-literal=DB_Password=password123
+kubectl create secret generic <secret-name> --from-file=app_secret.properties
+
+echo -n 'password' | base64 -> to convert the plain password into hash
+
+kubectl describe secrets
+kubectl describe secret <secret-name> -o yaml  -> to view the hash info
+echo -n 'dsfv-=f' | base64 --decode -> to decode the hash
+======================================================================================================
+kubectl version --short
+kubectl cluster-info
+kubectl config view
+kubectl get componentstatuses --kubeconfig admin.kubeconfig
+kubectl get nodes -o wide
+kubectl get nodes --show-labels
+kubectl get all  (or) kubectl get all -n <namespacename>
+kubcetl get pods
+kubectl describe pod <podname>
+kubectl exec -it <podname> --sh
+kubectl get cs   -> Component status (very helpful)
+kubectl get role,clusterrole,clusterrolebinding,rolebinding
+kubectl get serviceaccount
+kubectl get storageclass
+kubectl get pv,pvc
+kubectl delete pvc --all  -> This will delete the PVs as well if the PVs RECLAIM_POLICY is set to "Delete"
+
+kubectl get rs --all-namespaces
+kubectl get ds --all-namespaces
+
+kubectl -n kube-system create serviceaccount tiller
+kubectl get sa
+kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
+kubectl get role,clusterrole,clusterrolebinding,rolebinding -n kube-system
+
+kubectl get svc
+kubectl get svc -n <namespace> <svcname>
+kubectl get svc -n istio-system kiali
+kubectl get virtualservice (or) vs
+kubectl get ep
+kubectl port-forward <podname> 8080:80
+kubectl scale deployment <podname> --port 80 --type NodePort
+kubectl get vs mydata -o yaml  -> To check the config of "mydata" virtual service
+kubectl  -n istio-systemc port-forward kaili-7f63d8fcc  2001:3000  -> forwarding the kiali traffic to local host on port 3000 (for troubleshooting purpose)
+
+kubectl get secrets
+
+kubectl logs <podname>
+
+kubectl scale deploy <deploymentname> --replicas 2
+
+kubectl run nginx --image nginx --replicas 3
+
+# kubectl get cs 
+Warning: v1 ComponentStatus is deprecated in v1.19+
+NAME                 STATUS    MESSAGE             ERROR
+scheduler            Healthy   ok                  
+controller-manager   Healthy   ok                  
+etcd-0               Healthy   {"health":"true"}   
+
+Upgrade of master node:
+====================
+https://www.lisenet.com/2021/upgrading-homelab-kubernetes-cluster-from-1-20-to-1-21/
+
+kubectl cluster-info
+kubeadm version
+kubeadm upgrade plan
+yum install -y kubeadm-1.21.1-0 --disableexcludes=kubernetes
+kubeadm version
+kubeadm upgrade plan
+kubeadm upgrade apply v1.21.1
+Upgrade kubeadm and cluster on other master nodes if you have any
+kubectl drain master-node-1 --ignore-daemonsets
+yum install -y kubelet-1.21.1-0 kubectl-1.21.1-0 --disableexcludes=kubernetes
+systemctl daemon-reload && systemctl restart kubelet
+kubectl uncordon 
+kubectl get nodes master-node-1
+
+Upgrade of worker node:
+=====================
+yum install -y kubeadm-1.21.1-0 --disableexcludes=kubernetes
+kubectl drain worker-01 --ignore-daemonsets
+kubeadm upgrade node
+yum install -y kubelet-1.21.1-0 kubectl-1.21.1-0 --disableexcludes=kubernetes
+systemctl daemon-reload && systemctl restart kubelet
+kubectl uncordon worker-01
+kubectl get no
+
+===============================
+cat /etc/kubernetes/manifests/etcd.yaml | grep -i advertise-client-urls
+--advertise-client-urls=https://10.37.253.3:2379
+
+kubectl -n kube-system exec <etcd-pod-name> -- sh -c "etcdctl version"
+kubectl -n kube-system exec <etcd-pod-name> -- sh -c "ETCDCTL_API=3 etcdctl member list --endpoints=https://127.0.0.1:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key"
+
+
+ETCDCTL_API=3 etcdctl snapshot save etcdsnap.db
+ETCDCTL_API=3 etcdctl snapshot status etcdsnap.db
+ETCDCTL_API=3 etcdctl snapshot restore etcdsnap.db --data-dir /var/lib/etcd-from-backup
+
+# ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379   --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key snapshot save /opt/snapshot-pre-boot.db
+Snapshot saved at /opt/snapshot-pre-boot.db
+
+#ETCDCTL_API=3 etcdctl snapshot restore /opt/snapshot-pre-boot.db --data-dir /var/lib/etcd-from-backup
+
+#vi /etc/kubernetes/manifests/etcd.yaml
+-hostpath:
+    path: /var/lib/etcd-from-backup
+
+etcd pod will be restored to the above snapshot state
+
+==================================
+openssl genrsa -out jane.key 2048
+openssl req -new -key jane.key -subj "/CN=jane" -out jane.csr
+cat jane.csr | base64
+create manifests file with Kind "CertificateSigningRequest"  
+kubectl get csr
+kubectl certificate approve <csrname>
+kubectl certificate approve jane -o yaml
+echo "sfs$^JGH*(" | base64 --decode
+=====================================
+Without kubeconfig file:
+
+curl https://my-kube-plaground:6443/api/v1/pods --key admin.key  --cert admin.crt --cacert ca.crt
+
+kubectl get pods  --server my-kube-plaground:6443 --client-key admin.key --clientcertificate admin.crt --certificate-authority ca.crt
+
+$HOME/.kube/config - Kind "config"
+
+Sections in kube config file:
+Clusters - List of clusters having access to
+Contexts - Mapping between cluster and users 
+Users - Users that are having access to cluster
+
+you can also mention the namespaces in contect section to switch to particular namespace in a cluster
+
+current-context - default context used by kubectl 
+
+kubectl config view
+kubectl config view --kubeconfig=/root/test_k8s.conf
+kubectl config use-context prod-user@production-cluster
+
+====================================================
+To list API version:
+================
+On k8s master node:
+# kubectl proxy
+Starting to serve on 127.0.0.1:8001
+
+# curl http://localhost:8001 -k -> this will list high level API options
+  "paths": [
+    "/api",
+    "/api/v1",
+    "/apis",
+    "/apis/",
+    "/apis/admissionregistration.k8s.io",
+    "/apis/admissionregistration.k8s.io/v1",
+    "/apis/admissionregistration.k8s.io/v1beta1",
+    "/apis/apiextensions.k8s.io",
+
+# curl http://localhost:8001/apis -k
+
+=============
+Service Account:
+kubectl create serviceaccount srv-test
+kubectl get serviceaccount
+kubectl describe serviceaccount srv-test | grep -i "Tokens:"
+kubectl get secrets | grep -i "Token Name"
+kubectl describe secret <secretname>
+
+=============
+
+Docker Registry:
+=============
+Elastic Container Registry (ECR)
+Azure Container Registry (ACR)
+VMWare Harbour
+
+docker login privateregistry.com
+docker run privateregistry.com/apps/internal-app
+image: docker run privateregistry.com/apps/internal-app - in POD YAML file
+imagePullsecrets: regcred -> name of the secret created for Private registry login
+
+kubcetl create secret docker-registry regcred \
+       --docker-server=privateregistry.com \
+       --docker-user=users1 \
+       --docker-password=users1passwd \
+       --docker-email=users1email
+
+ingress:
+======
+# kubectl get all -A | grep -i controller
+kube-system                  deployment.apps/calico-kube-controllers               1/1     1            1           83d
+
+#kubectl get ingress -A
+
+Format - kubectl create ingress <ingress-name> --rule="host/path=service:port"
+
+Example - kubectl create ingress ingress-test --rule="wear.my-online-store.com/wear*=wear-service:80"
+
+===============================
+Nginx Ingress controller setup:
+
+# k create namespace ingress-space
+# k create configmap nginx-configuration -n ingress-space
+# k create sa ingress-serviceaccount -n ingress-space
+
+# kg roles -n ingress-space
+NAME           CREATED AT
+ingress-role   2021-09-13T13:25:18Z
+# kd roles ingress-role -n ingress-space
+Name:         ingress-role
+Labels:       app.kubernetes.io/name=ingress-nginx
+              app.kubernetes.io/part-of=ingress-nginx
+Annotations:  <none>
+PolicyRule:
+  Resources   Non-Resource URLs  Resource Names                     Verbs
+  ---------   -----------------  --------------                     -----
+  configmaps  []                 []                                 [get create]
+  configmaps  []                 [ingress-controller-leader-nginx]  [get update]
+  endpoints   []                 []                                 [get]
+  namespaces  []                 []                                 [get]
+  pods        []                 []                                 [get]
+  secrets     []                 []                                 [get]
+
+
+# kg rolebinding -n ingress-space
+NAME                   ROLE                AGE
+ingress-role-binding   Role/ingress-role   100s
+# kd rolebinding ingress-role-binding -n ingress-space
+Name:         ingress-role-binding
+Labels:       app.kubernetes.io/name=ingress-nginx
+              app.kubernetes.io/part-of=ingress-nginx
+Annotations:  <none>
+Role:
+  Kind:  Role
+  Name:  ingress-role
+Subjects:
+  Kind            Name                    Namespace
+  ----            ----                    ---------
+  ServiceAccount  ingress-serviceaccount  
+
+#k apply -f ingress-controller.yaml
+NAME                                 READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/ingress-controller   1/1     1            1           4m42s   nginx-ingress-controller   quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.21.0   name=nginx-ingress
+
+#k apply -f ingress-svc.yml
+NAME              TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE     SELECTOR
+service/ingress   NodePort   10.99.252.233   <none>        80:30080/TCP   2m36s   name=nginx-ingress
+======================================
+JSON Path:
+=========
+
+
+=====================================
+#kg svc -A | grep -i dns
+#cat /var/lib/kubelet/config.yaml| grep -i clusterDNS
+
+curl http://webservice -> refers to "webservice" service in default name space
+curl http://webservice.apps -> refers to "webservice" service in "apps" name space
+curl http://webservice.apps.svc.cluster.local -> To access the service at cluster level
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
